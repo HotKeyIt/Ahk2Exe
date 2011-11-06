@@ -20,7 +20,6 @@ AhkCompile(ByRef AhkFile, ExeFile="", ByRef CustomIcon="", BinFile="", UseMPRESS
 		BinFile = %A_ScriptDir%\AutoHotkeySC.bin
 	
 	Util_DisplayHourglass()
-	
 	FileCopy, %BinFile%, %ExeFile%, 1
 	if ErrorLevel
 		Util_Error("Error: Unable to copy AutoHotkeySC binary file to destination.")
@@ -43,11 +42,12 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile="")
 	
 	ExtraFiles := []
 	PreprocessScript(ScriptBody, AhkFile, ExtraFiles)
+	ScriptBody :=Trim(ScriptBody,"`n")
+	
 	;FileDelete, %ExeFile%.ahk
 	;FileAppend, % ScriptBody, %ExeFile%.ahk
 	VarSetCapacity(BinScriptBody, BinScriptBody_Len := StrPut(ScriptBody, "UTF-8"))
 	StrPut(ScriptBody, &BinScriptBody, "UTF-8")
-	
 	module := DllCall("BeginUpdateResource", "str", ExeFile, "uint", 0, "ptr")
 	if !module
 		Util_Error("Error: Error opening the destination file.")
@@ -77,7 +77,7 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile="")
 		
 		IfNotExist, %file%
 			goto _FailEnd2
-		
+
 		; This "old-school" method of reading binary files is way faster than using file objects.
 		FileGetSize, filesize, %file%
 		VarSetCapacity(filedata, filesize)

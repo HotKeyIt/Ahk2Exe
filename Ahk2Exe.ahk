@@ -123,15 +123,34 @@ return
 BuildBinFileList:
 BinFiles := ["AutoHotkeySC.bin"]
 BinNames = (Default)
-Loop, %A_ScriptDir%\*.bin
+Loop, %A_ScriptDir%\*.bin,0,1
 {
-	SplitPath, A_LoopFileFullPath,,,, n
-	if n = AutoHotkeySC
-		continue
+	SplitPath, A_LoopFileFullPath,,d,, n
 	FileGetVersion, v, %A_LoopFileFullPath%
-	BinFiles._Insert(n ".bin")
-	BinNames .= "|v" v " " n
+	If (d:=SubStr(d,StrLen(A_ScriptDir)+2))
+		BinFiles._Insert(d "\" n ".bin")
+	else BinFiles._Insert(n ".bin")
+	BinNames .= "|v" v " " n ".bin (" SubStr(d,InStr(d,"\",1,0)+1) ")"
 }
+Loop, %A_ScriptDir%\*.exe,0,1
+{
+  SplitPath, A_LoopFileFullPath,,d,, n
+	FileGetVersion, v, %A_LoopFileFullPath%
+	If (d:=SubStr(d,StrLen(A_ScriptDir)+2))
+		BinFiles._Insert(d "\" n ".exe")
+	else BinFiles._Insert(n ".exe")
+	BinNames .= "|v" v " " n ".exe" " (" SubStr(d,InStr(d,"\",1,0)+1) ")"
+}
+Loop, %A_ScriptDir%\*.dll,0,1
+{
+  SplitPath, A_LoopFileFullPath,,d,, n
+	FileGetVersion, v, %A_LoopFileFullPath%
+	If (d:=SubStr(d,StrLen(A_ScriptDir)+2))
+		BinFiles._Insert(d "\" n ".dll")
+	else BinFiles._Insert(n ".dll")
+	BinNames .= "|v" v " " n ".dll" " (" SubStr(d,InStr(d,"\",1,0)+1) ")"
+}
+
 return
 
 FindBinFile(name)
@@ -226,7 +245,7 @@ return
 
 BrowseExe:
 Gui, +OwnDialogs
-FileSelectFile, ov, S16, %LastExeDir%, Save As, Executable files (*.exe)
+FileSelectFile, ov, S16, %LastExeDir%, Save As, Executable files (*.exe;*.dll)
 if ErrorLevel
 	return
 GuiControl,, ExeFile, %ov%
