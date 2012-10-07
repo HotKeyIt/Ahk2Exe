@@ -6,7 +6,6 @@
 ;	Written by fincs - Interface based on the original Ahk2Exe
 ;
 
-#NoEnv
 #NoTrayIcon
 #SingleInstance Off
 #Include %A_ScriptDir%
@@ -128,10 +127,10 @@ return
 
 BuildBinFileList:
 BinFiles := ["AutoHotkeySC.bin"]
-BinNames = (Default)
-Loop, %A_ScriptDir%\..\*.bin,0,1
+BinNames := "(Default)"
+LoopFiles, %A_ScriptDir%\..\*.bin,FR
 {
-	SplitPath, A_LoopFileFullPath,,d,, n
+	SplitPath,% A_LoopFileFullPath,,d,, n
 	FileGetVersion, v, %A_LoopFileFullPath%
 	; Listvars
 	; MsgBox % SubStr(d,StrLen(A_ScriptDir)+2)
@@ -139,27 +138,27 @@ Loop, %A_ScriptDir%\..\*.bin,0,1
 		; BinFiles._Insert(d "\" n ".bin")
 	; else 
 	BinFiles._Insert(A_LoopFileFullPath)
-	BinNames .= "|v" v " " n ".bin (..\" SubStr(d,InStr(d,"\",1,0)+1) ")"
+	BinNames .= "|v" v " " n ".bin (..\" SubStr(d,InStr(d,"\",1,-1)+1) ")"
 }
-Loop, %A_ScriptDir%\..\*.exe,0,1
+LoopFiles, %A_ScriptDir%\..\*.exe,FR
 {
-  SplitPath, A_LoopFileFullPath,,d,, n
+  SplitPath,% A_LoopFileFullPath,,d,, n
 	FileGetVersion, v, %A_LoopFileFullPath%
 	; If (d:=SubStr(d,StrLen(A_ScriptDir)+2))
 		; BinFiles._Insert(d "\" n ".exe")
 	; else 
 	BinFiles._Insert(A_LoopFileFullPath)
-	BinNames .= "|v" v " " n ".exe" " (..\" SubStr(d,InStr(d,"\",1,0)+1) ")"
+	BinNames .= "|v" v " " n ".exe" " (..\" SubStr(d,InStr(d,"\",1,-1)+1) ")"
 }
-Loop, %A_ScriptDir%\..\*.dll,0,1
+LoopFiles, %A_ScriptDir%\..\*.dll,FR
 {
-  SplitPath, A_LoopFileFullPath,,d,, n
+  SplitPath,% A_LoopFileFullPath,,d,, n
 	FileGetVersion, v, %A_LoopFileFullPath%
 	; If (d:=SubStr(d,StrLen(A_ScriptDir)+2))
 		; BinFiles._Insert(d "\" n ".dll")
 	; else 
 	BinFiles._Insert(A_LoopFileFullPath)
-	BinNames .= "|v" v " " n ".dll" " (..\" SubStr(d,InStr(d,"\",1,0)+1) ")"
+	BinNames .= "|v" v " " n ".dll" " (..\" SubStr(d,InStr(d,"\",1,-1)+1) ")"
 }
 
 return
@@ -177,11 +176,11 @@ CLIMain:
 Error_ForceExit := true
 
 p := []
-Loop, %0%
+Loop % args.MaxIndex()
 {
-	if %A_Index% = /NoDecompile
+	if (args[A_Index] = "/NoDecompile")
 		Util_Error("Error: /NoDecompile is not supported.")
-	else p._Insert(%A_Index%)
+	else p._Insert(args[A_Index])
 }
 
 if Mod(p._MaxIndex(), 2)
@@ -192,16 +191,16 @@ Loop, % p._MaxIndex() // 2
 	p1 := p[2*(A_Index-1)+1]
 	p2 := p[2*(A_Index-1)+2]
 	
-	if p1 not in /in,/out,/icon,/pass,/bin,/mpress
+	if !InStr(",/in,/out,/icon,/pass,/bin,/mpress,","," p1 ",")
 		goto BadParams
 	
-	if p1 = /pass
+	if (p1 = "/pass")
 		Util_Error("Error: Password protection is not supported.")
 	
-	if p2 =
+	if (p2 = "")
 		goto BadParams
 	
-	StringTrimLeft, p1, p1, 1
+	p1:=SubStr(p1,2)
 	gosub _Process%p1%
 }
 
@@ -214,7 +213,7 @@ if !IcoFile
 if !BinFile
 	BinFile := A_ScriptDir "\" LastBinFile
 
-if UseMPRESS =
+if (UseMPRESS = "")
 	UseMPRESS := LastUseMPRESS
 
 CLIMode := true
@@ -287,47 +286,47 @@ else
 return
 
 LoadSettings:
-RegRead, LastScriptDir, HKCU, Software\AutoHotkey\Ahk2Exe, LastScriptDir
-RegRead, LastExeDir, HKCU, Software\AutoHotkey\Ahk2Exe, LastExeDir
-RegRead, LastIconDir, HKCU, Software\AutoHotkey\Ahk2Exe, LastIconDir
-RegRead, LastIcon, HKCU, Software\AutoHotkey\Ahk2Exe, LastIcon
-RegRead, LastBinFile, HKCU, Software\AutoHotkey\Ahk2Exe, LastBinFile
-RegRead, LastUseCompression, HKCU, Software\AutoHotkey\Ahk2Exe, LastUseCompression
-RegRead, LastUseMPRESS, HKCU, Software\AutoHotkey\Ahk2Exe, LastUseMPRESS
-if LastBinFile =
-	LastBinFile = AutoHotkeySC.bin
+RegRead, LastScriptDir, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastScriptDir
+RegRead, LastExeDir, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastExeDir
+RegRead, LastIconDir, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastIconDir
+RegRead, LastIcon, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastIcon
+RegRead, LastBinFile, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastBinFile
+RegRead, LastUseCompression, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseCompression
+RegRead, LastUseMPRESS, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseMPRESS
+if (LastBinFile = "")
+	LastBinFile := "AutoHotkeySC.bin"
 if LastUseMPRESS
 	LastUseMPRESS := true
 return
 
 SaveSettings:
-SplitPath, AhkFile,, AhkFileDir
+SplitPath,% AhkFile,, AhkFileDir
 if ExeFile
-	SplitPath, ExeFile,, ExeFileDir
+	SplitPath,% ExeFile,, ExeFileDir
 else
 	ExeFileDir := LastExeDir
 if IcoFile
-	SplitPath, IcoFile,, IcoFileDir
+	SplitPath,% IcoFile,, IcoFileDir
 else
 	IcoFileDir := ""
-RegWrite, REG_SZ, HKCU, Software\AutoHotkey\Ahk2Exe, LastScriptDir, %AhkFileDir%
-RegWrite, REG_SZ, HKCU, Software\AutoHotkey\Ahk2Exe, LastExeDir, %ExeFileDir%
-RegWrite, REG_SZ, HKCU, Software\AutoHotkey\Ahk2Exe, LastIconDir, %IcoFileDir%
-RegWrite, REG_SZ, HKCU, Software\AutoHotkey\Ahk2Exe, LastIcon, %IcoFile%
-RegWrite, REG_SZ, HKCU, Software\AutoHotkey\Ahk2Exe, LastUseCompression, %UseCompression%
-RegWrite, REG_SZ, HKCU, Software\AutoHotkey\Ahk2Exe, LastUseMPRESS, %UseMPRESS%
+RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastScriptDir, %AhkFileDir%
+RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastExeDir, %ExeFileDir%
+RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastIconDir, %IcoFileDir%
+RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastIcon, %IcoFile%
+RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseCompression, %UseCompression%
+RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastUseMPRESS, %UseMPRESS%
 if !CustomBinFile
-	RegWrite, REG_SZ, HKCU, Software\AutoHotkey\Ahk2Exe, LastBinFile, % BinFiles[BinFileId]
+	RegWrite, REG_SZ, HKEY_CURRENT_USER\Software\AutoHotkey\Ahk2Exe, LastBinFile,% BinFiles[BinFileId]
 return
 
 Help:
-helpfile = %A_ScriptDir%\..\AutoHotkey.chm
-IfNotExist, %helpfile%
+helpfile := A_ScriptDir "\..\AutoHotkey.chm"
+If !FileExist(helpfile)
 	Util_Error("Error: cannot find AutoHotkey help file!")
 
 VarSetCapacity(ak, ak_size := 8+5*A_PtrSize+4, 0) ; HH_AKLINK struct
 NumPut(ak_size, ak, 0, "UInt")
-name = Ahk2Exe
+name := "Ahk2Exe"
 NumPut(&name, ak, 8)
 DllCall("hhctrl.ocx\HtmlHelp", "ptr", GuiHwnd, "str", helpfile, "uint", 0x000D, "ptr", &ak) ; 0x000D: HH_KEYWORD_LOOKUP
 return
@@ -352,14 +351,14 @@ Util_Status(s)
 	SB_SetText(s)
 }
 
-Util_Error(txt, doexit=1)
+Util_Error(txt, doexit:=1)
 {
 	global CLIMode, Error_ForceExit, ExeFileTmp
 	
 	if ExeFileTmp && FileExist(ExeFileTmp)
 	{
 		FileDelete, %ExeFileTmp%
-		ExeFileTmp =
+		ExeFileTmp := ""
 	}
 	
 	Util_HideHourglass()
@@ -390,4 +389,107 @@ Util_DisplayHourglass()
 Util_HideHourglass()
 {
 	DllCall("SetCursor", "ptr", DllCall("LoadCursor", "ptr", 0, "ptr", 32512, "ptr"))
+}
+
+/* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+__      __      ______
+\ \    / /     |___  /           V A R Z  >>>  N A T I V E  D A T A  C O M P R E S S I O N
+ \ \  / /_ _ _ __ / /            http://www.autohotkey.com/community/viewtopic.php?t=45559
+  \ \/ / _` | '__/ /             Author: Suresh Kumar A N  (email: arian.suresh@gmail.com)
+   \  / (_| | | / /__            Ver 2.0 | Created 19-Jun-2009 | Last Modified 27-Sep-2012
+    \/ \__,_|_|/_____|           > http://tinyurl.com/skanbox/AutoHotkey/VarZ/2.0/VarZ.ahk
+                                                  |
+ - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+*/
+
+VarZ_Compress( ByRef Data, DataSize, CompressionMode := 0x102,RECURSIVE := 0 ) { ; 0x100 = COMPRESSION_ENGINE_MAXIMUM / 0x2 = COMPRESSION_FORMAT_LZNT1
+
+ Static STATUS_SUCCESS := 0x0,   HdrSz := 18
+
+ If ( NumGet( Data, "UInt" ) = 0x005F5A4C )                           ; "LZ_" + Chr(0)
+    Return ErrorLevel := -1,0                                ; already compressed
+
+ DllCall( "ntdll\RtlGetCompressionWorkSpaceSize"
+        , UInt,  CompressionMode
+        , UIntP, CompressBufferWorkSpaceSize
+        , UIntP, CompressFragmentWorkSpaceSize )
+
+ VarSetCapacity( CompressBufferWorkSpace, CompressBufferWorkSpaceSize )
+
+ TempSize := VarSetCapacity( TempData, DataSize )             ; Workspace for Compress
+
+ NTSTATUS := DllCall( "ntdll\RtlCompressBuffer"
+                    , UShort,  CompressionMode
+                    , PTR,  &Data                            ; Uncompressed data
+                    , UInt,  DataSize
+                    , PTR,  &TempData                        ; Compressed data
+                    , UInt,  TempSize
+                    , UInt,  CompressFragmentWorkSpaceSize
+                    , UIntP, FinalCompressedSize              ; Compressed data size
+                    , PTR,  &CompressBufferWorkSpace
+                          ,  UInt )
+
+ If ( NTSTATUS <> STATUS_SUCCESS  ||  FinalCompressedSize + HdrSz > DataSize )
+    Return ErrorLevel := ( NTSTATUS ? NTSTATUS : -2 ),0      ; unable to compress data,0
+ 
+ VarSetCapacity( Data, FinalCompressedSize + HdrSz, 0 )       ; Renew variable capacity
+
+ NumPut( 0x005F5A4C, Data, "UInt" )                            ; "LZ_" + Chr(0)
+ Numput( CompressionMode, Data, 8, "UShort" )                 ; actually "UShort"
+ NumPut( DataSize, Data, 10, "UInt" )                          ; Uncompressed data size
+ NumPut( FinalCompressedSize, Data, 14, "UInt" )               ; Compressed data size
+
+ DllCall( "RtlMoveMemory", PTR,  &Data + HdrSz               ; Target pointer
+                         , PTR,  &TempData                   ; Source pointer
+                         , PTR,  FinalCompressedSize )       ; Data length in bytes
+
+ DllCall( "shlwapi\HashData", PTR,  &Data + 8                ; Read data pointer
+                            , UInt,  FinalCompressedSize + 10 ; Read data size
+                            , PTR,  &Data + 4                ; Write data pointer
+                            , UInt,  4 )                      ; Write data length in bytes
+ If !RECURSIVE && NumPut( 0x315F5A4C, Data, "UInt" ) ; Try extra compression
+  If MultiCompressedSize:= VarZ_Compress(Data,FinalCompressedSize + HdrSz,CompressionMode,1)
+   return MultiCompressedSize
+  else NumPut( 0x005F5A4C, Data, "UInt" )
+  Return FinalCompressedSize + HdrSz
+}
+
+VarZ_Uncompress( ByRef D ) {  ; Shortcode version of VarZ_Decompress() of VarZ 2.0 wrapper
+; VarZ 2.0 by SKAN, 27-Sep-2012. http://www.autohotkey.com/community/viewtopic.php?t=45559
+ If 0x5F5A4C != NumGet(D, "UInt" )
+  Return ErrorLevel := -1,0
+ savedHash := NumGet(D,4,"UInt"), TZ := NumGet(D,10,"UInt"), DZ := NumGet(D,14,"UInt")
+ DllCall( "shlwapi\HashData", PTR,&D+8, UInt,DZ+10, UIntP,Hash, UInt,4 )
+ If (Hash!=savedHash)
+  Return ErrorLevel := -2,0
+ VarSetCapacity( TD,TZ,0 ), NTSTATUS := DllCall( "ntdll\RtlDecompressBuffer", UShort
+ , NumGet(D,8,"UShort"), PTR, &TD, UInt,TZ, PTR,&D+18, UInt,DZ, UIntP,Final, UInt )
+ If NTSTATUS!=0
+  Return ErrorLevel := NTSTATUS,0
+ VarSetCapacity( D,Final,0 ), DllCall( "RtlMoveMemory", PTR,&D, PTR,&TD, PTR,Final )
+ If NumGet(D,"UInt")=0x315F5A4C && NumPut(0x005F5A4C,D,"UInt")
+  Return VarZ_Uncompress( D )
+Return VarSetCapacity( D,-1 ),Final
+}
+
+;- -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - --
+
+VarZ_Load( ByRef Data, SrcFile ) {
+ FileGetSize, DataSize, %SrcFile%
+ If !ErrorLevel {
+  FileRead, Data, *c %SrcFile%
+  If !ErrorLevel
+   Return DataSize
+ }
+}
+
+;- -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - --
+
+VarZ_Save( ByRef Data, DataSize, TrgFile ) {
+ hFile :=  DllCall( "_lcreat", ( A_IsUnicode ? "AStr" : "Str" ),TrgFile, UInt,0,PTR )
+ If hFile<1
+  Return ErrorLevel := 1,""
+ nBytes := DllCall( "_lwrite", PTR,hFile, PTR,&Data, UInt,DataSize, UInt )
+ DllCall( "_lclose", PTR,hFile )
+ Return nBytes
 }

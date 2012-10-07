@@ -1,26 +1,24 @@
 #Include ScriptParser.ahk
 #Include IconChanger.ahk
 
-AhkCompile(ByRef AhkFile, ExeFile="", ByRef CustomIcon="", BinFile="", UseMPRESS="", UseCompression="")
+AhkCompile(ByRef AhkFile, ExeFile:="", ByRef CustomIcon:="", BinFile:="", UseMPRESS:="",UseCompression:="")
 {
 	global ExeFileTmp
 	AhkFile := Util_GetFullPath(AhkFile)
-	if AhkFile =
+	if (AhkFile = "")
 		Util_Error("Error: Source file not specified.")
-	SplitPath, AhkFile,, AhkFile_Dir,, AhkFile_NameNoExt
+	SplitPath,% AhkFile,, AhkFile_Dir,, AhkFile_NameNoExt
 	
-	if ExeFile =
-		ExeFile = %AhkFile_Dir%\%AhkFile_NameNoExt%.exe
+	if (ExeFile = "")
+		ExeFile := AhkFile_Dir "\" AhkFile_NameNoExt ".exe"
 	else
 		ExeFile := Util_GetFullPath(ExeFile)
 	
 	ExeFileTmp := ExeFile
 	
-	if BinFile =
-		BinFile = %A_ScriptDir%\AutoHotkeySC.bin
-	
+	if (BinFile = "")
+		BinFile := A_ScriptDir "\AutoHotkeySC.bin"
 	Util_DisplayHourglass()
-	
 	FileCopy, %BinFile%, %ExeFile%, 1
 	if ErrorLevel
 		Util_Error("Error: Unable to copy AutoHotkeySC binary file to destination.")
@@ -37,14 +35,14 @@ AhkCompile(ByRef AhkFile, ExeFile="", ByRef CustomIcon="", BinFile="", UseMPRESS
 	Util_Status("")
 }
 
-BundleAhkScript(ExeFile, AhkFile, IcoFile="", UseCompression="")
+BundleAhkScript(ExeFile, AhkFile, IcoFile:="",UseCompression:=0)
 {
-	SplitPath, AhkFile,, ScriptDir
+	SplitPath,% AhkFile,, ScriptDir
 	
 	ExtraFiles := []
 	PreprocessScript(ScriptBody, AhkFile, ExtraFiles)
 	ScriptBody :=Trim(ScriptBody,"`n")
-	StringReplace,ScriptBody,ScriptBody,`n,`r,All
+	StrReplace,ScriptBody,%ScriptBody%,`n,`r
 	;FileDelete, %ExeFile%.ahk
 	;FileAppend, % ScriptBody, %ExeFile%.ahk
 	If UseCompression {
@@ -85,9 +83,9 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile="", UseCompression="")
 	for each,file in ExtraFiles
 	{
 		Util_Status("Compressing and adding: " file)
-		StringUpper, resname, file
+		StrUpper, resname, %file%
 		
-		IfNotExist, %file%
+		If !FileExist(file)
 			goto _FailEnd2
 		
 		; This "old-school" method of reading binary files is way faster than using file objects.
