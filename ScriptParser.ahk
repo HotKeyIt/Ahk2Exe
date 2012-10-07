@@ -116,13 +116,12 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList="", FirstScri
 		Util_Status("Auto-including any functions called from a library...")
 		ilibfile = %A_Temp%\_ilib.ahk
 		FileDelete, %ilibfile%
-		If A_IsCompiled
-			RunWait, "%A_ScriptDir%\..\AutoHotkey.exe" /iLib "%ilibfile%" "%AhkScript%", %FirstScriptDir%, UseErrorLevel
-		else
-			RunWait, "%A_AhkPath%" /iLib "%ilibfile%" "%AhkScript%", %FirstScriptDir%, UseErrorLevel
+		static AhkPath := A_IsCompiled ? A_ScriptDir "\..\AutoHotkey.exe" : A_AhkPath
+		RunWait, "%AhkPath%" /iLib "%ilibfile%" "%AhkScript%", %FirstScriptDir%, UseErrorLevel
 		IfExist, %ilibfile%
 			PreprocessScript(ScriptText, ilibfile, ExtraFiles, FileList, FirstScriptDir, Options)
 		FileDelete, %ilibfile%
+		StringTrimRight, ScriptText, ScriptText, 1 ; remove trailing newline
 	}
 	
 	if OldWorkingDir
@@ -131,7 +130,7 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList="", FirstScri
 
 FindLibraryFile(name, ScriptDir)
 {
-	libs := [ScriptDir "\Lib", A_MyDocuments "\AutoHotkey\Lib", A_ScriptDir "\..\Lib"]
+	libs := [ScriptDir "\Lib", A_MyDocuments "\AutoHotkey\Lib", A_ScriptDir "\..\Lib", SubStr(A_AhkPath,1,InStr(A_AhkPath,"\",1,0)) "Lib",A_ScriptDir "\..\..\Lib"]
 	p := InStr(name, "_")
 	if p
 		name_lib := SubStr(name, 1, p-1)

@@ -1,7 +1,7 @@
 #Include ScriptParser.ahk
 #Include IconChanger.ahk
 
-AhkCompile(ByRef AhkFile, ExeFile="", ByRef CustomIcon="", BinFile="", UseMPRESS="")
+AhkCompile(ByRef AhkFile, ExeFile="", ByRef CustomIcon="", BinFile="", UseMPRESS="", UseCompression="")
 {
 	global ExeFileTmp
 	AhkFile := Util_GetFullPath(AhkFile)
@@ -20,11 +20,12 @@ AhkCompile(ByRef AhkFile, ExeFile="", ByRef CustomIcon="", BinFile="", UseMPRESS
 		BinFile = %A_ScriptDir%\AutoHotkeySC.bin
 	
 	Util_DisplayHourglass()
+	
 	FileCopy, %BinFile%, %ExeFile%, 1
 	if ErrorLevel
 		Util_Error("Error: Unable to copy AutoHotkeySC binary file to destination.")
 	
-	BundleAhkScript(ExeFile, AhkFile, CustomIcon)
+	BundleAhkScript(ExeFile, AhkFile, CustomIcon,UseCompression)
 	
 	if FileExist(A_ScriptDir "\mpress.exe") && UseMPRESS
 	{
@@ -36,18 +37,29 @@ AhkCompile(ByRef AhkFile, ExeFile="", ByRef CustomIcon="", BinFile="", UseMPRESS
 	Util_Status("")
 }
 
-BundleAhkScript(ExeFile, AhkFile, IcoFile="")
+BundleAhkScript(ExeFile, AhkFile, IcoFile="", UseCompression="")
 {
 	SplitPath, AhkFile,, ScriptDir
 	
 	ExtraFiles := []
 	PreprocessScript(ScriptBody, AhkFile, ExtraFiles)
 	ScriptBody :=Trim(ScriptBody,"`n")
-	
+	StringReplace,ScriptBody,ScriptBody,`n,`r,All
 	;FileDelete, %ExeFile%.ahk
 	;FileAppend, % ScriptBody, %ExeFile%.ahk
-	VarSetCapacity(BinScriptBody, BinScriptBody_Len := StrPut(ScriptBody, "UTF-8"))
-	StrPut(ScriptBody, &BinScriptBody, "UTF-8")
+	If UseCompression {
+		VarSetCapacity(BinScriptBody, BinScriptBody_Len:=StrPut(ScriptBody, "UTF-8"))
+		StrPut(ScriptBody, &BinScriptBody, "UTF-8")
+		If !BinScriptBody_Len:=VarZ_Compress(BinScriptBody,StrPut(ScriptBody, "UTF-8")+2,0x102){
+			VarSetCapacity(BinScriptBody, BinScriptBody_Len:=StrPut(ScriptBody, "UTF-8"))
+			StrPut(ScriptBody, &BinScriptBody, "UTF-8")
+		}
+		VarZ_Save(BinScriptBody,BinScriptBody_Len,"x:\test.ahz")
+	} else {
+		VarSetCapacity(BinScriptBody, BinScriptBody_Len:=StrPut(ScriptBody, "UTF-8"))
+		StrPut(ScriptBody, &BinScriptBody, "UTF-8")
+	}
+	
 	module := DllCall("BeginUpdateResource", "str", ExeFile, "uint", 0, "ptr")
 	if !module
 		Util_Error("Error: Error opening the destination file.")
@@ -77,11 +89,15 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile="")
 		
 		IfNotExist, %file%
 			goto _FailEnd2
-
+		
 		; This "old-school" method of reading binary files is way faster than using file objects.
 		FileGetSize, filesize, %file%
 		VarSetCapacity(filedata, filesize)
 		FileRead, filedata, *c %file%
+		If UseCompression {
+			If !filesize:=VarZ_Compress(filedata,filesize,0x2) ; use simple compression for better speed
+				FileGetSize, filesize, %file%
+		}
 		if !DllCall("UpdateResource", "ptr", module, "ptr", 10, "str", resname
 				  , "ushort", 0x409, "ptr", &filedata, "uint", filesize, "uint")
 			goto _FailEnd2

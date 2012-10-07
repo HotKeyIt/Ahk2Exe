@@ -1,13 +1,15 @@
-﻿;
+;
 ; File encoding:  UTF-8
 ;
 ; Script description:
-;	Ahk2Exe script reimplementation
+;	Ahk2Exe - AutoHotkey Script Compiler
+;	Written by fincs - Interface based on the original Ahk2Exe
 ;
 
 #NoEnv
 #NoTrayIcon
 #SingleInstance Off
+#Include %A_ScriptDir%
 #Include Compiler.ahk
 SendMode Input
 
@@ -22,17 +24,10 @@ gosub LoadSettings
 if 0 != 0
 	goto CLIMain
 
-if DEBUG
-{
-	AhkFile = %A_MyDocuments%\Ahk2ExeTest\Main.ahk
-	;ExeFile = %A_ScriptDir%\hello2.exe
-	;IcoFile = %A_ScriptDir%\ahkswitch.ico
-	BinFileId := FindBinFile(LastBinFile)
-}else
-{
-	IcoFile = %LastIcon%
-	BinFileId := FindBinFile(LastBinFile)
-}
+IcoFile := LastIcon
+BinFileId := FindBinFile(LastBinFile)
+
+#include *i __debug.ahk
 
 Menu, FileMenu, Add, &Convert, Convert
 Menu, FileMenu, Add
@@ -50,8 +45,10 @@ Gui, Add, Text, x287 y34,
 (
 ©2004-2009 Chris Mallet
 ©2008-2011 Steve Gray (Lexikos)
-©2011 fincs
+©2011-2012 fincs
+©2012-2012 HotKeyIt
 http://www.autohotkey.com
+Note: Compiling does not guarantee source code protection.
 )
 Gui, Add, Text, x11 y117 w570 h2 +0x1007
 Gui, Add, GroupBox, x11 y124 w570 h86, Required Parameters
@@ -61,22 +58,31 @@ Gui, Add, Button, x459 y146 w53 h23 gBrowseAhk, &Browse
 Gui, Add, Text, x17 y180, &Destination (.exe file)
 Gui, Add, Edit, x137 y176 w315 h23 +Disabled vExeFile, %Exefile%
 Gui, Add, Button, x459 y176 w53 h23 gBrowseExe, B&rowse
-Gui, Add, GroupBox, x11 y219 w570 h106, Optional Parameters
+Gui, Add, GroupBox, x11 y219 w570 h128, Optional Parameters
 Gui, Add, Text, x18 y245, Custom Icon (.ico file)
 Gui, Add, Edit, x138 y241 w315 h23 +Disabled vIcoFile, %IcoFile%
 Gui, Add, Button, x461 y241 w53 h23 gBrowseIco, Br&owse
 Gui, Add, Button, x519 y241 w53 h23 gDefaultIco, D&efault
 Gui, Add, Text, x18 y274, Base File (.bin)
 Gui, Add, DDL, x138 y270 w315 h23 R10 AltSubmit vBinFileId Choose%BinFileId%, %BinNames%
-Gui, Add, CheckBox, x138 y298 w315 h20 vUseMpress Checked%LastUseMPRESS%, Use MPRESS (if present) to compress resulting exe
-Gui, Add, Button, x258 y329 w75 h28 +Default gConvert, > &Convert <
+Gui, Add, CheckBox, x138 y298 w315 h20 gCheckCompression vUseCompression Checked%LastUseCompression%, Use compression to reduce size of resulting exe
+Gui, Add, CheckBox, x138 y320 w315 h20 gCheckCompression vUseMpress Checked%LastUseMPRESS%, Use MPRESS (if present) to compress resulting exe
+Gui, Add, Button, x258 y351 w75 h28 +Default gConvert, > &Convert <
 Gui, Add, Statusbar,, Ready
 if !A_IsCompiled
 	Gui, Add, Pic, x40 y5 +0x801000, %A_ScriptDir%\logo.gif
 else
 	gosub AddPicture
-Gui, Show, w594 h383, Ahk2Exe for AHK_L v%A_AhkVersion% -- Script to EXE Converter
+Gui, Show, w594 h405, Ahk2Exe for AutoHotkey v%A_AhkVersion% -- Script to EXE Converter
 return
+
+CheckCompression:
+Gui,Submit,NoHide
+If (A_GuiControl="UseCompression" && %A_GuiControl%)
+	GuiControl,,UseMPress,0
+else if (A_GuiControl="UseMPress" && %A_GuiControl%)
+	GuiControl,,UseCompression,0
+Return
 
 GuiClose:
 Gui, Submit
@@ -123,32 +129,37 @@ return
 BuildBinFileList:
 BinFiles := ["AutoHotkeySC.bin"]
 BinNames = (Default)
-Loop, %A_ScriptDir%\*.bin,0,1
+Loop, %A_ScriptDir%\..\*.bin,0,1
 {
 	SplitPath, A_LoopFileFullPath,,d,, n
 	FileGetVersion, v, %A_LoopFileFullPath%
-	If (d:=SubStr(d,StrLen(A_ScriptDir)+2))
-		BinFiles._Insert(d "\" n ".bin")
-	else BinFiles._Insert(n ".bin")
-	BinNames .= "|v" v " " n ".bin (" SubStr(d,InStr(d,"\",1,0)+1) ")"
+	; Listvars
+	; MsgBox % SubStr(d,StrLen(A_ScriptDir)+2)
+	; If (d:=SubStr(d,StrLen(A_ScriptDir)+2))
+		; BinFiles._Insert(d "\" n ".bin")
+	; else 
+	BinFiles._Insert(A_LoopFileFullPath)
+	BinNames .= "|v" v " " n ".bin (..\" SubStr(d,InStr(d,"\",1,0)+1) ")"
 }
-Loop, %A_ScriptDir%\*.exe,0,1
+Loop, %A_ScriptDir%\..\*.exe,0,1
 {
   SplitPath, A_LoopFileFullPath,,d,, n
 	FileGetVersion, v, %A_LoopFileFullPath%
-	If (d:=SubStr(d,StrLen(A_ScriptDir)+2))
-		BinFiles._Insert(d "\" n ".exe")
-	else BinFiles._Insert(n ".exe")
-	BinNames .= "|v" v " " n ".exe" " (" SubStr(d,InStr(d,"\",1,0)+1) ")"
+	; If (d:=SubStr(d,StrLen(A_ScriptDir)+2))
+		; BinFiles._Insert(d "\" n ".exe")
+	; else 
+	BinFiles._Insert(A_LoopFileFullPath)
+	BinNames .= "|v" v " " n ".exe" " (..\" SubStr(d,InStr(d,"\",1,0)+1) ")"
 }
-Loop, %A_ScriptDir%\*.dll,0,1
+Loop, %A_ScriptDir%\..\*.dll,0,1
 {
   SplitPath, A_LoopFileFullPath,,d,, n
 	FileGetVersion, v, %A_LoopFileFullPath%
-	If (d:=SubStr(d,StrLen(A_ScriptDir)+2))
-		BinFiles._Insert(d "\" n ".dll")
-	else BinFiles._Insert(n ".dll")
-	BinNames .= "|v" v " " n ".dll" " (" SubStr(d,InStr(d,"\",1,0)+1) ")"
+	; If (d:=SubStr(d,StrLen(A_ScriptDir)+2))
+		; BinFiles._Insert(d "\" n ".dll")
+	; else 
+	BinFiles._Insert(A_LoopFileFullPath)
+	BinNames .= "|v" v " " n ".dll" " (..\" SubStr(d,InStr(d,"\",1,0)+1) ")"
 }
 
 return
@@ -266,9 +277,9 @@ return
 Convert:
 Gui, +OwnDialogs
 Gui, Submit, NoHide
-BinFile := A_ScriptDir "\" BinFiles[BinFileId]
+BinFile := BinFiles[BinFileId]
 ConvertCLI:
-AhkCompile(AhkFile, ExeFile, IcoFile, BinFile, UseMpress)
+AhkCompile(AhkFile, ExeFile, IcoFile, BinFile, UseMpress,UseCompression)
 if !CLIMode
 	Util_Info("Conversion complete.")
 else
@@ -281,6 +292,7 @@ RegRead, LastExeDir, HKCU, Software\AutoHotkey\Ahk2Exe, LastExeDir
 RegRead, LastIconDir, HKCU, Software\AutoHotkey\Ahk2Exe, LastIconDir
 RegRead, LastIcon, HKCU, Software\AutoHotkey\Ahk2Exe, LastIcon
 RegRead, LastBinFile, HKCU, Software\AutoHotkey\Ahk2Exe, LastBinFile
+RegRead, LastUseCompression, HKCU, Software\AutoHotkey\Ahk2Exe, LastUseCompression
 RegRead, LastUseMPRESS, HKCU, Software\AutoHotkey\Ahk2Exe, LastUseMPRESS
 if LastBinFile =
 	LastBinFile = AutoHotkeySC.bin
@@ -302,6 +314,7 @@ RegWrite, REG_SZ, HKCU, Software\AutoHotkey\Ahk2Exe, LastScriptDir, %AhkFileDir%
 RegWrite, REG_SZ, HKCU, Software\AutoHotkey\Ahk2Exe, LastExeDir, %ExeFileDir%
 RegWrite, REG_SZ, HKCU, Software\AutoHotkey\Ahk2Exe, LastIconDir, %IcoFileDir%
 RegWrite, REG_SZ, HKCU, Software\AutoHotkey\Ahk2Exe, LastIcon, %IcoFile%
+RegWrite, REG_SZ, HKCU, Software\AutoHotkey\Ahk2Exe, LastUseCompression, %UseCompression%
 RegWrite, REG_SZ, HKCU, Software\AutoHotkey\Ahk2Exe, LastUseMPRESS, %UseMPRESS%
 if !CustomBinFile
 	RegWrite, REG_SZ, HKCU, Software\AutoHotkey\Ahk2Exe, LastBinFile, % BinFiles[BinFileId]
@@ -330,7 +343,7 @@ Original version:
   Copyright ©2008-2011 Steve Gray (Lexikos)
 
 Script rewrite:
-  Copyright ©2011 fincs
+  Copyright ©2011-2012 fincs
 )
 return
 
