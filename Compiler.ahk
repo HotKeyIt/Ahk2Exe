@@ -52,7 +52,6 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile:="",UseCompression:=0)
 			VarSetCapacity(BinScriptBody, BinScriptBody_Len:=StrPut(ScriptBody, "UTF-8"))
 			StrPut(ScriptBody, &BinScriptBody, "UTF-8")
 		}
-		VarZ_Save(BinScriptBody,BinScriptBody_Len,"x:\test.ahz")
 	} else {
 		VarSetCapacity(BinScriptBody, BinScriptBody_Len:=StrPut(ScriptBody, "UTF-8"))
 		StrPut(ScriptBody, &BinScriptBody, "UTF-8")

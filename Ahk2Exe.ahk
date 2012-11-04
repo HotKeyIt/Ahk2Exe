@@ -390,7 +390,6 @@ Util_HideHourglass()
 {
 	DllCall("SetCursor", "ptr", DllCall("LoadCursor", "ptr", 0, "ptr", 32512, "ptr"))
 }
-
 /* - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 __      __      ______
 \ \    / /     |___  /           V A R Z  >>>  N A T I V E  D A T A  C O M P R E S S I O N
@@ -474,6 +473,51 @@ Return VarSetCapacity( D,-1 ),Final
 
 ;- -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - --
 
+VarZ_Decompress( ByRef Data ) {
+
+ Static STATUS_SUCCESS := 0x0,   HdrSz := 18
+ 
+ If ( NumGet( Data, "UInt" ) <> 0x005F5A4C )                   ; "LZ_" + Chr(0)
+    Return ErrorLevel := -1,0                                 ; not natively compressed
+
+ DataSize := NumGet( Data, 14, "UInt" )                        ; Compressed data size
+
+ DllCall( "shlwapi\HashData", PTR,  &Data + 8                ; Read data pointer
+                            , UInt,  DataSize + 10            ; Read data size
+                            , UIntP, Hash                     ; Write data pointer
+                            , UInt,  4 )                      ; Write data length in bytes
+ 
+ If ( Hash <> NumGet( Data, 4, "UInt") )                       ; Hash vs Saved hash
+    Return ErrorLevel := -2,0                                 ; Hash failed = Data corrupt
+
+ TempSize := NumGet( Data, 10 , "UInt")                        ; Decompressed data size
+ VarSetCapacity( TempData, TempSize, 0 )                      ; Workspace for Decompress
+
+ NTSTATUS := DllCall( "ntdll\RtlDecompressBuffer"
+                    , UShort,  NumGet( Data, 8, "UShort" )      ; Compression mode
+                    , PTR,  &TempData                        ; Decompressed data
+                    , UInt,  TempSize
+                    , PTR,  &Data + HdrSz                    ; Compressed data
+                    , UInt,  DataSize
+                    , UIntP, FinalUncompressedSize            ; Decompressed data size
+                           , UInt )
+
+ If ( NTSTATUS <> STATUS_SUCCESS )
+    Return ErrorLevel := NTSTATUS,0                           ; Unable to decompress data
+
+ VarSetCapacity( Data, FinalUncompressedSize, 0 )             ; Renew variable capacity
+
+ DllCall( "RtlMoveMemory", PTR,  &Data                       ; Target pointer
+                         , PTR,  &TempData                   ; Source pointer
+                         , PTR,  FinalUncompressedSize )     ; Data length in bytes
+ 
+ If NumGet( Data, "UInt" )=0x315F5A4C && NumPut( 0x005F5A4C, Data, "UInt" )
+  Return VarZ_Uncompress( Data )
+ else Return VarSetCapacity( Data, -1 ),FinalUncompressedSize
+}
+
+;- -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - --
+
 VarZ_Load( ByRef Data, SrcFile ) {
  FileGetSize, DataSize, %SrcFile%
  If !ErrorLevel {
@@ -493,3 +537,5 @@ VarZ_Save( ByRef Data, DataSize, TrgFile ) {
  DllCall( "_lclose", PTR,hFile )
  Return nBytes
 }
+
+;- -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- - -- End of VarZ wrapper
