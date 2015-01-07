@@ -9,7 +9,7 @@ AHKType(exeName)
 	if !vert
 		return "FAIL"
 	
-	StrSplit, vert, vert, .
+	StrSplit, vert, %vert%, .
 	vert := vert.4 | (vert.3 << 8) | (vert.2 << 16) | (vert.1 << 24)
 	
 	if (0x014C != exeMachine := GetExeMachine(exeName)) && (exeMachine != 0x8664)
@@ -24,9 +24,10 @@ AHKType(exeName)
 	
 	if !DllCall("version\VerQueryValue", "ptr", &VersionInfo, "str", "\VarFileInfo\Translation", "ptr*", lpTranslate, "uint*", cbTranslate)
 		return "FAIL"
-	id := SubStr("0000" SubStr(format("0x{1:X}",NumGet(lpTranslate+0, "UShort")), 3), -3, 4) 
-		. SubStr("0000" SubStr(format("0x{1:X}",NumGet(lpTranslate+2, "UShort")), 3), -3, 4)
-
+	
+	id := SubStr("0000" SubStr(format("0x{1:X}",NumGet(lpTranslate+0, "UShort")), 3), -4, 4) 
+		. SubStr("0000" SubStr(format("0x{1:X}",NumGet(lpTranslate+2, "UShort")), 3), -4, 4)
+	
 	if !DllCall("version\VerQueryValue", "ptr", &VersionInfo, "str", "\StringFileInfo\" id "\ProductName", "ptr*", pField, "uint*", cbField)
 		return "FAIL"
 	

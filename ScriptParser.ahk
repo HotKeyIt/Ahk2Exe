@@ -141,9 +141,9 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 		FileDelete, %ilibfile%
 		static AhkPath := A_IsCompiled ? A_ScriptDir "\..\AutoHotkey.exe" : A_AhkPath
 		AhkType := AHKType(AhkPath)
-		if AhkType = FAIL
+		if AhkType = "FAIL"
 			Util_Error("Error: The AutoHotkey build used for auto-inclusion of library functions is not recognized.", 1, AhkPath)
-		if AhkType = Legacy
+		if AhkType = "Legacy"
 			Util_Error("Error: Legacy AutoHotkey versions (prior to v1.1) are not allowed as the build used for auto-inclusion of library functions.", 1, AhkPath)
 		RunWait, "%AhkPath%" /iLib "%ilibfile%" "%AhkScript%", %FirstScriptDir%, UseErrorLevel
 		If FileExist(ilibfile)

@@ -92,7 +92,6 @@ TT(options:="",text:="",title:=""){
         %option1%:=option.2
       } else if ( option2:=InStr(A_LoopField,"=")){
         option1:=SubStr(A_LoopField,1,option2-1)
-        MSgBox % A_LoopField "`n" options
         %option1%:=SubStr(A_LoopField,option2+1)
       } else if A_LoopField
         %A_LoopField% := 1

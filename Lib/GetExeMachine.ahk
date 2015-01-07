@@ -4,5 +4,8 @@
 
 GetExeMachine(exepath){
 	if exe := FileOpen(exepath, "r")
-		return exe.Seek(60), exe.Seek(exe.ReadUInt()+4), exe.ReadUShort()
+	{
+		exe.Seek(60), exe.Seek(exe.ReadUInt()+4)
+		return exe.ReadUShort()
+	}
 }
