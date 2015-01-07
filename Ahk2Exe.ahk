@@ -89,7 +89,7 @@ Gui, Add, DDL, x138 y233 w315 h23 R10 AltSubmit vBinFileId Choose%BinFileId%, %B
 ToolTip.Add("ComboBox1","Select AutoHotkey binary file to use for compilation")
 Gui, Add, CheckBox, x138 y260 w315 h20 gCheckCompression vUseCompression Checked%LastUseCompression%, Use compression to reduce size of resulting executable
 ToolTip.Add("Button7","Compress all resources")
-Gui, Add, CheckBox, x138 y282 w245 h20 vUseEncrypt gCheckCompression Checked%LastUseEncrypt%, Encrypt. Enter password used in executable:
+Gui, Add, CheckBox, x138 y282 w230 h20 vUseEncrypt gCheckCompression Checked%LastUseEncrypt%, Encrypt. Enter password used in executable:
 ToolTip.Add("Button8","Use AES encryption for resources (requires a Password)")
 Gui, Add, Edit,x370 y282 w100 h20 Password vUsePassword,AutoHotkey
 ToolTip.Add("Edit4","Enter password for encryption (default = AutoHotkey).`nAutoHotkey binary must be using this password internally")
