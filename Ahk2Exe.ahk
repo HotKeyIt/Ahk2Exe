@@ -209,7 +209,7 @@ LoopFiles, %A_ScriptDir%\..\*.bin,FR
 }
 LoopFiles, %A_ScriptDir%\..\*.exe,FR
 {
-  SplitPath,% A_LoopFileFullPath,,d,, n
+	SplitPath,% A_LoopFileFullPath,,d,, n
 	FileGetVersion, v, %A_LoopFileFullPath%
 	If !InStr(FileGetInfo(A_LoopFileFullPath,"FileDescription"),"AutoHotkey")
 		continue
