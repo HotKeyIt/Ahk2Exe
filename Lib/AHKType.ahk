@@ -34,7 +34,7 @@ AHKType(exeName)
 	wCodePage := NumGet(lpTranslate+2, "UShort")
 	id := SubStr("0000" SubStr(wLanguage, 3), -3, 4) SubStr("0000" SubStr(wCodePage, 3), -3, 4)
 	SetFormat, IntegerFast, %oldFmt%
-
+	
 	if !DllCall("version\VerQueryValue", "ptr", &VersionInfo, "str", "\StringFileInfo\" id "\ProductName", "ptr*", pField, "uint*", cbField)
 		return "FAIL"
 	
