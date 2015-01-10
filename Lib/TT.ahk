@@ -1,4 +1,108 @@
-﻿;: Title: TT.ahk Object based ToolTip Library by HotKeyIt
+﻿/*
+Gosub, Example1 ;Simple ToolTip
+
+Gosub, Example2 ;Links in ToolTip
+
+Gosub, Example3 ;ToolTips for Controls
+
+Gosub, Example4 ;ToolTip follows mouse
+
+Gosub, Example5 ;View Icons included in dll
+
+~Esc::ExitApp
+
+;-------------------------------------------------
+
+Example1:
+TT:=TT("Icon=1","text","Title") ;create a ToolTip
+Loop 50 {
+   TT.Show() ;show ToolTip at mouse coordinates
+   Sleep, 50
+}
+TT.Remove() ;delete ToolTip
+MsgBox ToolTip Deleted, click ok for next ToolTip example
+Return
+;-------------------------------------------------
+
+Example2:
+TT:=TT("CloseButton OnClick=TT_Msg OnClose=TT_MsgClose"
+      ,"<a click>Click Me</a>`n<a Second action>Click Me Too</a>"
+      ,"Title (Click close Button to proceed)")
+TT.Show()
+Exit
+TT_Msg(TT,option){
+   MsgBox % option
+}
+TT_MsgClose(TT){
+   SetTimer, Example3,-100
+}
+
+;-------------------------------------------------
+
+Example3:
+TT:=TT("GUI=1")
+Gui,Add,Edit,,I'm an Edit Box
+TT.Add("Edit1","Edit Control","Center RTL HWND")
+Gui,Add,Button,,I'm a Button
+TT.Add("Button1","<a>You can't click me :)</a>","PARSELINKS")
+Gui,Show
+Return
+GuiClose:
+Gui,Destroy
+TT_Remove() ;remove all tooltips
+;-------------------------------------------------
+
+Example4:
+TT:=TT("ClickTrough Balloon"
+      ,""
+      ,"ClickTrough activated (Hold Ctrl and clict trough ToolTip)") ;create new tooltip
+TT.Color("White","Black")
+Loop 100 {
+   If !GetKeyState("Ctrl","P")
+      TT.Show(A_Hour ":" A_Min ":" A_Sec)
+   Sleep 50
+}
+TT.Remove()
+;-------------------------------------------------
+
+Example5:
+i:=0
+File:="c:\Windows\system32\shell32.dll"
+TT:=TT("OnClick=TTmsg OnClose=TTMsgClose CloseButton")
+TT.Show("<a>Click Me</a>`nhello there I'm a ToolTip`n`nPress Ctrl & + or Ctrl & - to see icons of:`n<a>" File "</a>`n<a newFile>>>> Select another file</a>" ;Text
+         ,"","" ;x and y coordinates
+         ,"ToolTip Title") ;Title
+Return
+^+::
+^-::
+If A_ThisHotkey=^+
+   i++
+else
+   i--
+TT.Title("Icon Number: " i)
+TT.Icon(File,i) ;iconFile and icon index
+Return
+TTMsg(TT,key){
+   global File,i
+   If key=
+      ExitApp
+   else if key=newFile
+  {
+      i:=1
+      FileSelectFile,File,,%A_WinDir%\system32\,Select a file,*.dll;*.exe;*.*
+      TT.Show("<a>Click Me</a>`nhello there I'm a ToolTip`n`nPress Ctrl & + or Ctrl & - to see icons of:`n<a>" File "</a>`n<a newFile>>>> Select another file</a>",,,"Icon Number: " i,file,i)
+  }
+   else if key=Click Me
+      MsgBox % key
+   else
+      Run % "explorer.exe /e,/n,/select," key
+}
+TTMsgClose(TT){
+   ExitApp
+}
+Return
+*/
+;: Title: TT.ahk Object based ToolTip Library by HotKeyIt
 ;
 
 ; Function: TT() - Object based ToolTip Library by HotKeyIt
@@ -78,7 +182,7 @@ TT(options:="",text:="",title:=""){
     Parent:=options
   else If (options){
     Loop,Parse,options,%A_Space%,%A_Space%
-      If istext {
+      If (istext){
         If (SubStr(A_LoopField,0)="'")
           %istext%:=string A_Space SubStr(A_LoopField,1,StrLen(A_LoopField)-1),istext:="",string:=""
         else
@@ -92,7 +196,7 @@ TT(options:="",text:="",title:=""){
       } else if ( option2:=InStr(A_LoopField,"=")){
         option1:=SubStr(A_LoopField,1,option2-1)
         %option1%:=SubStr(A_LoopField,option2+1)
-      } else if A_LoopField
+      } else if (A_LoopField)
         %A_LoopField% := 1
   }
 	If (Parent && Parent<100 && !DllCall("IsWindow","PTR",Parent)){
@@ -116,7 +220,7 @@ TT(options:="",text:="",title:=""){
     T.SETDELAYTIME()
   else T.SETDELAYTIME(2,AUTOPOP?AUTOPOP*1000:-1),T.SETDELAYTIME(3,INITIAL?INITIAL*1000:-1),T.SETDELAYTIME(1,RESHOW?RESHOW*1000:-1)
   T.fulltext:=text,T.maintext:=RegExReplace(text,"<a\K[^<]*?>",">")
-  If OnClick
+  If (OnClick)
     ParseLinks:=1
   T.rc:=Struct(_RECT) ;for TTM_SetMargin
   ;Tool for Main ToolTip
@@ -128,13 +232,13 @@ TT(options:="",text:="",title:=""){
 	,T.AddTool(P[])
   If (Theme)
     T.SETWINDOWTHEME()
-  If Color
+  If (Color)
     T.SETTIPTEXTCOLOR(Color)
-  If Background
+  If (Background)
     T.SETTIPBKCOLOR(BackGround)
   T.SetTitle(T.maintitle:=title,icon)
-  If ((T.OnClick:=OnClick)||(T.OnClose:=OnClose)||(T.OnShow:=OnShow)),T.OnClose:=OnClose,T.OnShow:=OnShow,T.ClickHide:=ClickHide
-    OnMessage(0x4e,A_ScriptHwnd,"TT_OnMessage")
+  If ((T.OnClick:=OnClick)||(T.OnClose:=OnClose)||(T.OnShow:=OnShow))
+    T.OnClose:=OnClose,T.OnShow:=OnShow,T.ClickHide:=ClickHide,OnMessage(0x4e,A_ScriptHwnd,"TT_OnMessage")
   Return T
 }
 
@@ -155,7 +259,7 @@ TT_Remove(T:=""){
 	for id,Tool in _
 	{
 	  If (T=Tool){
-			_[id]:=_[_.Length()],_.Remove(id)
+			_[id]:=_[_.MaxIndex()],_.Remove(id)
 			for id,tools in Tool.T
 			  Tool.DelTool(tools[])
 			Tool.DelTool(Tool.P[])
@@ -182,19 +286,19 @@ TT_OnMessage(wParam,lParam,msg,hwnd){
   text:=T.fulltext
   If (m=1){ 							;Show
     If IsFunc(T.OnShow)
-      T.OnShow("")
+      T.OnShow(T,"")
   } else If (m=2){ 					;Close
     If IsFunc(T.OnClose)
-      T.OnClose("")
+      T.OnClose(T,"")
     T.TRACKACTIVATE(0,T.P[])
   } else If InStr(text,"<a"){	;Click
-    If T.ClickHide
+    If (T.ClickHide)
       T.TRACKACTIVATE(0,T.P[])
     If (SubStr(LTrim(text:=SubStr(text,InStr(text,"<a",0,1,HDR.link+1)+2)),1,1)=">")
       action:=SubStr(text,InStr(text,">")+1,InStr(text,"</a>")-InStr(text,">")-1)
     else action:=Trim(action:=SubStr(text,1,InStr(text,">")-1))
-    If IsFunc(T.OnClick)
-      T.OnClick(action)
+    If IsFunc(func:=T.OnClick)
+      T.OnClick(T,action)
   }
   Return true
 }
@@ -221,11 +325,11 @@ TT_ADD(T,Control,Text:="",uFlags:="",Parent:=""){
     ControlGetText,text,%Control%,% "ahk_id " (Parent?Parent:T.P.hwnd)
   If (Control+0="")
     ControlGet,Control,Hwnd,,%Control%,% "ahk_id " (Parent?Parent:T.P.hwnd)
-  If uFlags
+  If (uFlags)
     If (uFlags+0="")
     {
       Loop,Parse,uflags,%A_Space%,%A_Space%
-        If A_LoopField
+        If (A_LoopField)
           %A_LoopField% := 1
       uFlags:=(HWND?0x1:HWND=""?0x1:0)|(Center?0x2:0)|(RTL?0x4:0)|(SUB?0x10:0)|(Track?0x20:0)|(Absolute?0x80:0)|(TRANSPARENT?0x100:0)|(ParseLinks?0x1000:0)
     }
@@ -240,7 +344,7 @@ TT_ADD(T,Control,Text:="",uFlags:="",Parent:=""){
 }
 
 TT_DEL(T,Control){
-  If !Control
+  If (!Control)
     Return 0
   If (Control+0="")
     ControlGet,Control,Hwnd,,%Control%,% "ahk_id " t.P.hwnd
@@ -289,9 +393,9 @@ TT_GetIcon(File:="",Icon_:=1){
     ; DllCall("gdiplus\GdiplusShutdown", "PTR",pToken) ; not done anymore since it is loaded before script starts
     Return
   }
-	If CR:=InStr(File,"`r") || LF:=InStr(File,"`n")
+	If (CR:=InStr(File,"`r") || LF:=InStr(File,"`n"))
 		File:=SubStr(file,1,CR<LF?CR-1:LF-1) ; this is a local parameter so we can change the memory 
-  If hIcon[File,Icon_]
+  If (hIcon[File,Icon_])
     Return hIcon[file,Icon_] 
   else if (hIcon[File] && !IsObject(hIcon[File]))
     return hIcon[File]
@@ -310,7 +414,7 @@ TT_GetIcon(File:="",Icon_:=1){
     Return hIcon[File,Icon_]:=Icon
   } else if (Icon_=""){
     If !FileExist(File){ 
-      if (File+0!="") ;assume Hex string
+      if RegExMatch(File,"^[0-9A-Fa-f]+$") ;assume Hex string
       {
         nSize := StrLen(File)//2
         VarSetCapacity( Buffer,nSize ) 
@@ -408,11 +512,11 @@ TT_Show(T,text:="",x:="",y:="",title:="",icon:=0,icon_:=1,defaulticon:=1){
     pCursor.cbSize:=sizeof(pCursor)
     ,DllCall("GetCursorInfo", "ptr", pCursor[])
     ,DllCall("GetIconInfo", "ptr", pCursor.hCursor, "ptr", pIcon[])
-    If picon.hbmColor
+    If (picon.hbmColor)
       DllCall("DeleteObject", "ptr", pIcon.hbmColor)
     DllCall("GetObject", "ptr", pIcon.hbmMask, "uint", sizeof(_BITMAP), "ptr", pBitmap[])
     ,hbmo := DllCall("SelectObject", "ptr", cdc:=DllCall("CreateCompatibleDC", "ptr", sdc:=DllCall("GetDC","ptr",0,"ptr"),"ptr"), "ptr", pIcon.hbmMask)
-    ,w:=pBitmap.bmWidth,h:=pBitmap.bmHeight, h:= h=w*2 ? (c:=0xffffff,s:=32,h//2) : (c:=s:=0,h)
+    ,w:=pBitmap.bmWidth,h:=pBitmap.bmHeight, h:= h=w*2 ? (h//2,c:=0xffffff,s:=32) : (h,c:=s:=0)
     Loop % w {
       xi := A_Index - 1
       Loop % h {
@@ -481,7 +585,7 @@ TT_Font(T, pFont:="") { ;Taken from HE_SetFont, thanks majkinetor. http://www.au
    weight      := InStr(pFont, "bold")      ? 700   : 400 
 
  ;height 
-   RegExMatch(pFont, "(?<=[S|s])(\d{1,2})(?=[ ,])?", height) 
+   RegExMatch(pFont, "O)(?<=[S|s])(\d{1,2})(?=[ ,])?", height) 
    if (!height.count()) 
       height := [10]
    RegRead,LogPixels,HKEY_LOCAL_MACHINE,SOFTWARE\Microsoft\Windows NT\CurrentVersion\FontDPI, LogPixels
@@ -489,7 +593,7 @@ TT_Font(T, pFont:="") { ;Taken from HE_SetFont, thanks majkinetor. http://www.au
    height := -DllCall("MulDiv", "int", Height.1, "int", LogPixels, "int", 72) 
 
  ;face 
-   RegExMatch(pFont, "(?<=,).+", fontFace)    
+   RegExMatch(pFont, "O)(?<=,).+", fontFace)    
    if (fontFace.Value()) 
     fontFace := Trim( fontFace.Value())      ;trim 
    else fontFace := "MS Sans Serif" 
@@ -497,7 +601,7 @@ TT_Font(T, pFont:="") { ;Taken from HE_SetFont, thanks majkinetor. http://www.au
     fontFace:=pFont
   
  ;create font 
-  If T.hFont
+  If (T.hFont)
       DllCall("DeleteObject","PTR",T.hfont)
   T.hFont   := DllCall("CreateFont", "int",  height, "int",  0, "int",  0, "int", 0 
                       ,"int",  weight,   "Uint", italic,   "Uint", underline 
@@ -635,7 +739,7 @@ TTM_SETTIPTEXTCOLOR(T,color:=0){
 }
 TTM_SETTITLE(T,title:="",icon:="",Icon_:=1,default:=1){
   static TTM_SETTITLE := 0x400 + (A_IsUnicode ? 33 : 32) 
-	If icon
+	If (icon)
     If (icon+0="")
       If !icon:=TT_GetIcon(icon,Icon_)
 				icon:=default
