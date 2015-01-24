@@ -84,7 +84,7 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePasswor
 		If !FileExist(file)
 			goto _FailEnd2
 		If UseCompression
-			filesize:=ZipFileRaw(file,A_Temp "\Ahk2Exe_compress_script.bin",UsePassword)
+			filesize:=ZipFileRaw(file,A_Temp "\Ahk2Exe_compress_script.bin")
 		else FileGetSize,filesize,%file%
 		; This "old-school" method of reading binary files is way faster than using file objects.
 		VarSetCapacity(filedata, filesize)

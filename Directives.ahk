@@ -145,7 +145,7 @@ Directive_AddResource(state, UseCompression, UsePassword, rsrc, resName := "")
 		if between(resName,0,0xFFFF)
 			nameType := "uint"
 	If UseCompression {
-		fSize:=ZipFileRaw(resFile,A_Temp "\Ahk2Exe_compress_script.bin",UsePassword)
+		fSize:=ZipFileRaw(resFile,A_Temp "\Ahk2Exe_compress_script.bin")
 		FileRead,fData,% "*c " A_Temp "\Ahk2Exe_compress_script.bin"
 		FileDelete % A_Temp "\Ahk2Exe_compress_script.bin"
 	} else {
