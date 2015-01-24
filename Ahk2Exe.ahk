@@ -286,12 +286,12 @@ if !IcoFile
 	IcoFile := LastIcon
 
 if !BinFile
-	BinFile := A_ScriptDir "\" LastBinFile
+	BinFile := LastBinFile
 
 if (UseMPRESS = "")
 	UseMPRESS := LastUseMPRESS
 
-CLIMode := true
+global CLIMode := true
 return
 
 BadParams:
@@ -477,8 +477,7 @@ Util_Error(txt, doexit := 1, extra := "")
 	
 	if CLIMode
 		FileAppend, Failed to compile: %ExeFile%`n, *
-	
-	SB_SetText("Ready")
+	else	SB_SetText("Ready")
 	
 	if doexit
 		if !Error_ForceExit

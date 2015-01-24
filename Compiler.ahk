@@ -28,14 +28,14 @@ AhkCompile(ByRef AhkFile, ExeFile := "", ByRef CustomIcon := "", BinFile := "", 
 	
 	if FileExist(A_ScriptDir "\mpress.exe") && UseMPRESS
 	{
-		SB_SetText("Compressing final executable...")
+		If !CLIMode,	SB_SetText("Compressing final executable...")
 		if UseCompression ; do not compress resources
 			RunWait, "%A_ScriptDir%\mpress.exe" -q -x -r "%ExeFile%",, Hide
 		else RunWait, "%A_ScriptDir%\mpress.exe" -q -x "%ExeFile%",, Hide
 	}
 	
 	SetCursor(LoadCursor(0, 32512)) ; Util_HideHourglass()
-	SB_SetText("")
+	If !CLIMode,	SB_SetText("")
 }
 
 BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePassword := "")
@@ -72,13 +72,13 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePasswor
 	
 	scriptResName := (!dirState.NoAhkWithIcon && IcoFile) ? ">AHK WITH ICON<" : ">AUTOHOTKEY SCRIPT<"
 	
-	SB_SetText("Adding: Master Script")
+	If !CLIMode,	SB_SetText("Adding: Master Script")
 	if !UpdateResource(module, 10, scriptResName, 0x409, &BinScriptBody, BinScriptBody_Len)
 		goto _FailEnd
 		
 	for each,file in ExtraFiles
 	{
-		SB_SetText("Adding: " file)
+		If !CLIMode,	SB_SetText("Adding: " file)
 		StrUpper, resname, %file%
 		
 		If !FileExist(file)
@@ -102,14 +102,14 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePasswor
 	
 	if dirState.ConsoleSubsys
 	{
-		SB_SetText("Marking executable as a console application...")
+		If !CLIMode,	SB_SetText("Marking executable as a console application...")
 		if !SetExeSubsystem(ExeFile, 3)
 			Util_Error("Could not change executable subsystem!")
 	}
 	
 	for each,cmd in dirState.PostExec
 	{
-		SB_SetText("PostExec: " cmd)
+		If !CLIMode,	SB_SetText("PostExec: " cmd)
 		RunWait, % cmd,, UseErrorLevel
 		if (ErrorLevel != 0)
 			Util_Error("Command failed with RC=" ErrorLevel ":`n" cmd)

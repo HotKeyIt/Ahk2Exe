@@ -5,7 +5,7 @@ ProcessDirectives(ExeFile, module, cmds, IcoFile, UseCompression, UsePassword)
 	state := { ExeFile: ExeFile, module: module, resLang: 0x409, verInfo: {}, IcoFile: IcoFile, PostExec: [] }
 	for _,cmdline in cmds
 	{
-		SB_SetText("Processing directive: " cmdline)
+		If !CLIMode,	SB_SetText("Processing directive: " cmdline)
 		if !RegExMatch(cmdline, "^(\w+)(?:\s+(.+))?$", o)
 			Util_Error("Error: Invalid directive:`n`n" cmdline)
 		_args := [], nargs := 0
@@ -33,7 +33,7 @@ ProcessDirectives(ExeFile, module, cmds, IcoFile, UseCompression, UsePassword)
 	
 	if !Util_ObjIsEmpty(state.verInfo)
 	{
-		SB_SetText("Changing version information...")
+		If !CLIMode,	SB_SetText("Changing version information...")
 		ChangeVersionInfo(ExeFile, module, state.verInfo)
 	}
 	
@@ -42,7 +42,7 @@ ProcessDirectives(ExeFile, module, cmds, IcoFile, UseCompression, UsePassword)
 		if !FileExist(IcoFile)
 			Util_Error("Error changing icon: File does not exist.")
 		
-		SB_SetText("Changing the main icon...")
+		If !CLIMode,	SB_SetText("Changing the main icon...")
 		if !ReplaceAhkIcon(module, IcoFile, ExeFile)
 			Util_Error("Error changing icon: Unable to read icon or icon was of the wrong format.")
 	}
@@ -218,7 +218,7 @@ ChangeVersionInfo(ExeFile, hUpdate, verInfo)
 VersionTextToNumber(v)
 {
 	r := 0, i := 0
-	while i < 4 && RegExMatch(v, "O)^(\d+).?", o)
+	while i < 4 && RegExMatch(v, "^(\d+).?", o)
 	{
 		v:= Substr(v,o.Len + 1)
 		val := o[1] + 0
