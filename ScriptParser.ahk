@@ -108,7 +108,7 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 						FileList.Insert(IncludeFile)
 					PreprocessScript(ScriptText, IncludeFile, ExtraFiles, FileList, FirstScriptDir, Options, IgnoreErrors)
 				}
-			}else if !contSection && tline ~= "i)FileInstall[, \t]"
+			}else if !contSection && tline ~= "i)^FileInstall[, \t]"
 			{
 				if tline ~= "^\w+\s+(:=|+=|-=|\*=|/=|//=|\.=|\|=|&=|\^=|>>=|<<=)"
 					continue ; This is an assignment!
@@ -145,7 +145,9 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 			Util_Error("Error: The AutoHotkey build used for auto-inclusion of library functions is not recognized.", 1, AhkPath)
 		if AhkType = Legacy
 			Util_Error("Error: Legacy AutoHotkey versions (prior to v1.1) are not allowed as the build used for auto-inclusion of library functions.", 1, AhkPath)
-		RunWait, "%AhkPath%" /iLib "%ilibfile%" "%AhkScript%", %FirstScriptDir%, UseErrorLevel
+		RunWait, "%AhkPath%" /iLib "%ilibfile%" /ErrorStdOut "%AhkScript%", %FirstScriptDir%, UseErrorLevel
+		if (ErrorLevel = 2)
+			Util_Error("Error: The script contains syntax errors.")
 		If FileExist(ilibfile)
 			PreprocessScript(ScriptText, ilibfile, ExtraFiles, FileList, FirstScriptDir, Options)
 		

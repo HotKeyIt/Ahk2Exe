@@ -174,7 +174,7 @@ ChangeVersionInfo(ExeFile, hUpdate, verInfo)
 	if !hModule
 		Util_Error("Error: Error opening destination file.")
 	
-	hRsrc := FindResource(hModule, 1, 16) ; Version Info\1
+	hRsrc := DllCall("FindResource", "PTR", hModule, "PTR", 1, "PTR", 16) ; Version Info\1
 	hMem := LoadResource(hModule, hRsrc)
 	vi := new VersionRes(LockResource(hMem))
 	FreeLibrary(hModule)

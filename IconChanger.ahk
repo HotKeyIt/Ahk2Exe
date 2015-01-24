@@ -71,7 +71,7 @@ EnumIcons(ExeFile, iconID)
 		return
 	}
 	
-	hRsrc := FindResource(hModule, iconID, 14)
+	hRsrc := DllCall("FindResource", "PTR", hModule, "PTR", iconID, "PTR", 14)
 	,hMem := LoadResource(hModule, hRsrc)
 	,pDirHeader := LockResource(hMem)
 	,pResDir := pDirHeader + 6
