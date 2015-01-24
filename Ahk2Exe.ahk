@@ -174,7 +174,7 @@ AddPicture:
 Gui, Add, Text, x40 y5 +0x80100E hwndhPicCtrl
 
 ;@Ahk2Exe-AddResource logo.png
-hRSrc := FindResource(0, "LOGO.PNG", 10)
+hRSrc := DllCall("FindResource", "PTR", 0,"STR", "LOGO.PNG", "PTR", 10)
 sData := SizeofResource(0, hRSrc)
 hRes  := LoadResource(0, hRSrc)
 pData := LockResource(hRes)
@@ -298,7 +298,7 @@ if !IcoFile
 	IcoFile := LastIcon
 
 if !BinFile
-	BinFile := A_ScriptDir "\" LastBinFile
+	BinFile := LastBinFile
 
 if (UseMPRESS = "")
 	UseMPRESS := LastUseMPRESS
