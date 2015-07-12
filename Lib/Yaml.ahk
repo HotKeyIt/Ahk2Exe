@@ -179,7 +179,7 @@ If !Yaml_SeqMap(LVL%_LVL%[""],"",_LFL)
 ObjPush(LVL%_LVL%[""],_LFL)
 }
 If !ObjLength(LVL%_LVL%[""])
-ObjRemove(LVL%_LVL%,"")
+ObjDelete(LVL%_LVL%,"")
 } else if _KEY!=""{
 If __SEQ&&_LVL>__LVL{
 If (OBJ:=ObjLength(LVL%_PRV%[""]))&&IsObject(LVL%_PRV%["",OBJ]){
