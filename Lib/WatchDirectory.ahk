@@ -1,4 +1,4 @@
-
+/*
 SetWinDelay,-1
 OnExit("GuiClose")
 
