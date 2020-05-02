@@ -111,7 +111,8 @@ Class _ToolTipClass{
       _ToolTipClass._.RemoveAt(i)
     }
     this.GetIcon() ;delete ToolTips and Destroy all icon handles
-  }*/
+  }
+  */
 
   Remove(){
     for id,Tool in _ToolTipClass._
