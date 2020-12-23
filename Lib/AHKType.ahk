@@ -19,17 +19,17 @@ AHKType(exeName)
 	if !(VersionInfoSize := DllCall("version\GetFileVersionInfoSize", "str", exeName, "uint*", null, "uint"))
 		return "FAIL"
 	
-	VarSetCapacity(VersionInfo, VersionInfoSize)
-	if !DllCall("version\GetFileVersionInfo", "str", exeName, "uint", 0, "uint", VersionInfoSize, "ptr", &VersionInfo)
+	VersionInfo:=BufferAlloc(VersionInfoSize)
+	if !DllCall("version\GetFileVersionInfo", "str", exeName, "uint", 0, "uint", VersionInfoSize, "ptr", VersionInfo)
 		return "FAIL"
 	
-	if !DllCall("version\VerQueryValue", "ptr", &VersionInfo, "str", "\VarFileInfo\Translation", "ptr*", lpTranslate:=0, "uint*", cbTranslate:=0)
+	if !DllCall("version\VerQueryValue", "ptr", VersionInfo, "str", "\VarFileInfo\Translation", "ptr*", lpTranslate:=0, "uint*", cbTranslate:=0)
 		return "FAIL"
 	
 	id := SubStr("0000" SubStr(format("0x{1:X}",NumGet(lpTranslate+0, "UShort")), 3), -4, 4) 
 		. SubStr("0000" SubStr(format("0x{1:X}",NumGet(lpTranslate+2, "UShort")), 3), -4, 4)
 	
-	if !DllCall("version\VerQueryValue", "ptr", &VersionInfo, "str", "\StringFileInfo\" id "\ProductName", "ptr*", pField:=0, "uint*", cbField:=0)
+	if !DllCall("version\VerQueryValue", "ptr", VersionInfo, "str", "\StringFileInfo\" id "\ProductName", "ptr*", pField:=0, "uint*", cbField:=0)
 		return "FAIL"
 	
 	; Check it is actually an AutoHotkey executable

@@ -20,8 +20,8 @@ AhkCompile(ByRef AhkFile, ExeFile := "", ByRef CustomIcon := "", BinFile := "", 
 	if (BinFile = "")
 		BinFile := A_ScriptDir "\AutoHotkeySC.bin"
 	SetCursor(LoadCursor(0, 32514)) ; Util_DisplayHourglass()
-	FileCopy BinFile, ExeFile, 1
-	if ErrorLevel
+  try FileCopy(BinFile, ExeFile, 1)
+  catch
 		Util_Error("Error: Unable to copy AutoHotkeySC binary file to destination.")
 	
 	BundleAhkScript(ExeFile, AhkFile, CustomIcon, UseCompression, UsePassword)
@@ -44,36 +44,35 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePasswor
 {
   global GuiStatusBar
 	SplitPath AhkFile,, ScriptDir
-	
+	zip:=data:=""
 	ExtraFiles := []
 	,Directives := PreprocessScript(ScriptBody, AhkFile, ExtraFiles)
 	,ScriptBody :=Trim(ScriptBody,"`n")
-	,VarSetCapacity(BinScriptBody, BinScriptBody_Len:=StrPut(ScriptBody, "UTF-8"))
-	,StrPut(ScriptBody, &BinScriptBody, "UTF-8")
 	If UseCompression {
-		VarSetCapacity(buf,bufsz:=65536,00),totalsz:=0,VarSetCapacity(buf1,65536)
+		buf:=BufferAlloc(bufsz:=65536,00),totalsz:=0,buf1:=BufferAlloc(65536)
 		Loop Parse,ScriptBody,"`n","`r"
 		{
 			If (A_LoopField=""){
-				NumPut(10,(&buf) + totalsz, "Char")
+				NumPut("Char", 10, buf.Ptr + totalsz)
 				,totalsz+=1
 				continue
 			}
-			len:=StrPutVar(A_LoopField,data,"UTF-8")
-			,sz:=ZipRawMemory(&data, len, zip, UsePassword)
-			,CryptBinaryToStringA(&zip, sz, 0x1|0x40000000, 0, getvar(cryptedsz:=0))
-			,tosavesz:=cryptedsz
-			,CryptBinaryToStringA(&zip, sz, 0x1|0x40000000, &buf1, getvar(cryptedsz))
-			,NumPut(10,&buf1,cryptedsz,"Char")
-			if (totalsz+tosavesz>bufsz)
-				VarSetCapacity(buf,bufsz*=2)
-			RtlMoveMemory((&buf) + totalsz,&buf1,tosavesz)
-			,totalsz+=tosavesz
+			data:=StrBuf(A_LoopField,"UTF-8")
+			,zip:=UsePassword?ZipRawMemory(data,, UsePassword):ZipRawMemory(data)
+			,CryptBinaryToStringA(zip, zip.size, 0x1|0x40000000, 0, getvar(cryptedsz:=0))
+			,CryptBinaryToStringA(zip, zip.size, 0x1|0x40000000, buf1, getvar(cryptedsz))
+			,NumPut("Char", 10, buf1.Ptr+cryptedsz)
+			if (totalsz+cryptedsz+1>bufsz)
+				newbuf:=BufferAlloc(bufsz*=2),RtlMoveMemory(newbuf,buf,totalsz),buf:=newbuf
+			RtlMoveMemory(buf.Ptr + totalsz,buf1,cryptedsz+1)
+			,totalsz+=cryptedsz+1
 		}
-		NumPut(0,&buf,totalsz-1,"UShort")
-		If !BinScriptBody_Len := ZipRawMemory(&buf,totalsz,BinScriptBody,UsePassword)
+		NumPut("UShort", 0, buf.Ptr + totalsz - 1)
+		If !BinScriptBody := ZipRawMemory(buf.Ptr,totalsz,UsePassword)
 			Util_Error("Error: Could not compress the source file.")
-	}
+	} else
+    BinScriptBody:=BufferAlloc(BinScriptBody_Len:=StrPut(ScriptBody, "UTF-8"))
+    ,StrPut(ScriptBody, BinScriptBody, "UTF-8")
 	
 	module := BeginUpdateResource(ExeFile)
 	if !module
@@ -86,14 +85,14 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePasswor
 	if outPreproc := dirState.OutPreproc
 	{
 		f := FileOpen(outPreproc, "w", "UTF-8-RAW")
-		f.RawWrite(BinScriptBody, BinScriptBody_Len)
+		f.RawWrite(BinScriptBody)
 		f := ""
 	}
 	
 	If !CLIMode
       GuiStatusBar.SetText("Adding: Master Script")
-	if !UpdateResource(module, 10, "E4847ED08866458F8DD35F94B37001C0", 0x409, &BinScriptBody, BinScriptBody_Len)
-		goto _FailEnd
+	if !UpdateResource(module, 10, "E4847ED08866458F8DD35F94B37001C0", 0x409, BinScriptBody, BinScriptBody.size)
+		return (EndUpdateResource(module),Util_Error("Error adding script file:`n`n" AhkFile))
 		
 	for each,file in ExtraFiles
 	{
@@ -102,23 +101,23 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePasswor
 		resname:=StrUpper(file)
 		
 		If !FileExist(file)
-			goto _FailEnd2
+			return (EndUpdateResource(module),Util_Error("Error adding FileInstall file:`n`n" file))
 		If UseCompression{
 			tempdata:=FileRead(file,"RAW")
 			tempsize:=FileGetSize(file)
-			If !filesize := ZipRawMemory(&tempdata, tempsize, filedata)
+			If !filesize := ZipRawMemory(tempdata, tempsize, filedata)
 				Util_Error("Error: Could not compress the file to: " file)
 		} else {
 			filedata:=FileRead(file,"RAW")
 			filesize:=FileGetSize(file)
 		}
 		
-		if !UpdateResource(module, 10, resname, 0x409, &filedata, filesize)
-			goto _FailEnd2
+		if !UpdateResource(module, 10, resname, 0x409, filedata, filesize)
+			return (EndUpdateResource(module),Util_Error("Error adding FileInstall file:`n`n" file))
 	}
-	VarSetCapacity(filedata, 0)
 	
-	gosub _EndUpdateResource
+	if !EndUpdateResource(module)
+		Util_Error("Error: Error opening the destination file.")
 	
 	if dirState.ConsoleApp
 	{
@@ -132,26 +131,9 @@ BundleAhkScript(ExeFile, AhkFile, IcoFile := "", UseCompression := 0, UsePasswor
 	{
 		If !CLIMode
         GuiStatusBar.SetText("PostExec: " cmd)
-		RunWait cmd,, "UseErrorLevel"
-		if (ErrorLevel != 0)
-			Util_Error("Command failed with RC=" ErrorLevel ":`n" cmd)
+		if ErrorLevel:=RunWait(cmd)
+			Util_Error("Command failed with RC=" ErrorMessage(ErrorLevel) ":`n" cmd)
 	}
-	
-	
-	return
-	
-_FailEnd:
-	gosub _EndUpdateResource
-	Util_Error("Error adding script file:`n`n" AhkFile)
-	
-_FailEnd2:
-	gosub _EndUpdateResource
-	Util_Error("Error adding FileInstall file:`n`n" file)
-	
-_EndUpdateResource:
-	if !EndUpdateResource(module)
-		Util_Error("Error: Error opening the destination file.")
-	return
 }
 
 class CTempWD
@@ -169,6 +151,6 @@ class CTempWD
 
 Util_GetFullPath(path)
 {
-	VarSetCapacity(fullpath, 260 * (!!A_IsUnicode + 1))
-	return GetFullPathName(path, 260, fullpath, 0) ? (VarSetCapacity(fullpath,-1),fullpath) : ""
+	fullpath:=BufferAlloc(260 * 2,0)
+	return GetFullPathName(path, 260, fullpath, 0) ? StrGet(fullpath) : ""
 }

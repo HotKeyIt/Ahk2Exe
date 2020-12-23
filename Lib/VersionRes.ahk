@@ -49,8 +49,8 @@ class VersionRes
 	
 	SetText(txt)
 	{
-		size:=this.Data.size:=2*(StrLen(txt)+1)
-		DllCall("msvcrt\memcpy","ptr",this.Data,"ptr", &txt, "ptr", size, "cdecl")
+    size:=this.Data.size:=2*(StrLen(txt)+1)
+		DllCall("msvcrt\memcpy","ptr",this.Data,"ptr", StrPtr(txt), "ptr", size, "cdecl")
 		,this.IsText := true
 		,this.DataSize := size
 	}
@@ -64,8 +64,8 @@ class VersionRes
 	{
 		orgAddr := addr
 		,addr += 2
-		,NumPut(ds:=this.DataSize, addr, "UShort"), addr += 2
-		,NumPut(it:=this.IsText, addr, "UShort"), addr += 2
+		,NumPut("UShort", ds:=this.DataSize, addr), addr += 2
+		,NumPut("UShort", it:=this.IsText, addr), addr += 2
 		,addr += 2*StrPut(this.Name, addr, "UTF-16")
 		,addr := (addr+3)&~3
 		,realSize := ds*(it+1)
@@ -74,7 +74,7 @@ class VersionRes
 		for k,v in this.children
 			addr += v.Save(addr)
 		size := addr - orgAddr
-		,NumPut(size, orgAddr, "UShort")
+		,NumPut("UShort", size, orgAddr)
 		return size
 	}
 }

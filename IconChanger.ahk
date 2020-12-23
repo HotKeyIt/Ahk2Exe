@@ -12,16 +12,16 @@ ReplaceAhkIcon(re, IcoFile, ExeFile, iconID := 159)
 	if !IsObject(f)
 		return false
 	
-	VarSetCapacity(igh, 8), f.RawRead(igh, 6)
-	if NumGet(igh, 0, "UShort") != 0 || NumGet(igh, 2, "UShort") != 1
+	igh:=BufferAlloc(8), f.RawRead(igh.Ptr, 6)
+	if NumGet("UShort", igh, 0) != 0 || NumGet("UShort", igh, 2) != 1
 		return false
 	
 	wCount := NumGet(igh, 4, "UShort")
 	
-	VarSetCapacity(rsrcIconGroup, rsrcIconGroupSize := 6 + wCount*14)
-	NumPut(NumGet(igh, "Int64"), rsrcIconGroup, "Int64") ; fast copy
+	rsrcIconGroup:=BufferAlloc(rsrcIconGroupSize := 6 + wCount*14)
+	NumPut("Int64", NumGet(igh, "Int64"), rsrcIconGroup) ; fast copy
 	
-	ige := &rsrcIconGroup + 6
+	ige := rsrcIconGroup.Ptr + 6
 	
 	; Delete all the images
 	Loop ids.Length
@@ -33,23 +33,23 @@ ReplaceAhkIcon(re, IcoFile, ExeFile, iconID := 159)
 			thisID := ++ _EI_HighestIconID
 		else thisID := ids[A_Index]
 		f.RawRead(ige+0, 12) ; read all but the offset
-		NumPut(thisID, ige+12, "UShort")
+		NumPut("UShort", thisID, ige+12)
 		
 		imgOffset := f.ReadUInt()
 		oldPos := f.Pos
 		f.Pos := imgOffset
 		
-		VarSetCapacity(iconData, iconDataSize := NumGet(ige+8, "UInt"))
+		iconData:=BufferAlloc(iconDataSize := NumGet(ige+8, "UInt"))
 		f.RawRead(iconData, iconDataSize)
 		f.Pos := oldPos
 		
-		if !UpdateResource(re, 3, thisID, 0x409, &iconData, iconDataSize)
+		if !UpdateResource(re, 3, thisID, 0x409, iconData, iconDataSize)
 			return false
 		
 		ige += 14
 	}
 	
-	return !!UpdateResource(re, 14, iconID, 0x409, &rsrcIconGroup, rsrcIconGroupSize)
+	return !!UpdateResource(re, 14, iconID, 0x409, rsrcIconGroup, rsrcIconGroupSize)
 }
 
 EnumIcons(ExeFile, iconID)

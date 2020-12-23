@@ -2,6 +2,7 @@
 PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstScriptDir := "", Options := "", iOption := 0)
 {
   global GuiStatusBar
+  IsFirstScript:=true, OldWorkingDir:=""
 	SplitPath AhkScript, ScriptName, ScriptDir
 	if !IsObject(FileList)
 	{
@@ -136,9 +137,9 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 		If !CLIMode
       GuiStatusBar.SetText("Auto-including any functions called from a library...")
 		ilibfile := FirstScriptDir "\FAF4D55FBB00419A9ECFFE26ED983E93.ahk"
-		FileDelete ilibfile
-		FileDelete ilibfile ".script"
-		FileDelete ilibfile ".error"
+		try FileDelete ilibfile
+		try FileDelete ilibfile ".script"
+		try FileDelete ilibfile ".error"
 		static AhkPath := A_AhkPath ;A_IsCompiled ? A_ScriptDir "\..\AutoHotkey.exe" : A_AhkPath
 		AhkType := AHKType(AhkPath)
 		if AhkType = "FAIL"
@@ -146,26 +147,26 @@ PreprocessScript(ByRef ScriptText, AhkScript, ExtraFiles, FileList := "", FirstS
 		if AhkType = "Legacy"
 			Util_Error("Error: Legacy AutoHotkey versions (prior to v1.1) are not allowed as the build used for auto-inclusion of library functions.", 1, AhkPath)
 		FileAppend ScriptText,ilibfile ".script", "UTF-8"
-    RunWait "`"" A_Comspec "`" /C `"`"" AhkPath "`" /iLib `"" ilibfile "`" /ErrorStdOut `"" ilibfile ".script`" 2>`"" ilibfile ".error`"`"", FirstScriptDir, "HIDE UseErrorLevel"
-		if (ErrorLevel = 2)
+    if (2=RunWait("`"" A_Comspec "`" /C `"" AhkPath "`" /iLib `"" ilibfile "`" /ErrorStdOut `"" ilibfile ".script`" 2>`"" ilibfile ".error`"", FirstScriptDir, "HIDE"))
 		{		
 			script_error:=FileRead(ilibfile ".error")
-			FileDelete ilibfile ".error"
+      MsgBox "`"" A_Comspec "`" /C `"`"" AhkPath "`" /iLib `"" ilibfile "`" /ErrorStdOut `"" ilibfile ".script`" 2>`"" ilibfile ".error`"`""
+			try FileDelete ilibfile ".error"
 			line_error:=SubStr(line_error:=SubStr(script_error,StrLen(ilibfile) + 10),1,InStr(line_error,")")-1)
 			Loop Parse, ScriptText,"`n","`r"
 				If (A_Index=line_error){
 					line_error:=A_LoopField
 					break
 				}
-			FileDelete ilibfile
-			FileDelete ilibfile ".script"
+			try FileDelete ilibfile
+			try FileDelete ilibfile ".script"
 			Util_Error("Error: The script contains syntax errors.",true,line_error "`n" SubStr(script_error,StrLen(ilibfile) + 9))
 		}
 		If FileExist(ilibfile)
 			PreprocessScript(ScriptText, ilibfile, ExtraFiles, FileList, FirstScriptDir, Options)
-		FileDelete ilibfile
-		FileDelete ilibfile ".script"
-		FileDelete ilibfile ".error"
+		try FileDelete ilibfile
+		try FileDelete ilibfile ".script"
+		try FileDelete ilibfile ".error"
 		ScriptText:=SubStr(ScriptText, 1,-1) ; remove trailing newline
 	}
 	

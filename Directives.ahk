@@ -150,8 +150,8 @@ Directive_AddResource(state, UseCompression, UsePassword, rsrc, resName := "")
 	If UseCompression && resType=10{
 		tempdata:=FileRead(resFile,"RAW")
 		tempsize:=FileGetSize(resFile)
-		If !fSize := ZipRawMemory(&tempdata, tempsize, fData)
-			Util_Error("Error: Could not compress the file to: " file)
+		If !fSize := ZipRawMemory(tempdata, tempsize, fData)
+			Util_Error("Error: Could not compress the file to: " resFile)
 	} else {
 		fSize:=FileGetSize(resFile)
 		fData:=FileRead(resFile,"RAW")
@@ -166,7 +166,6 @@ Directive_AddResource(state, UseCompression, UsePassword, rsrc, resName := "")
 	}
 	if !UpdateResource(state.module, resType is "digit"?resType+0:resType, resName is "digit"?resName+0:resName, state.resLang, pData, fSize)
 		Util_Error("Error adding resource:`n`n" rsrc)
-	VarSetCapacity(fData, 0)
 }
 
 ChangeVersionInfo(ExeFile, hUpdate, verInfo)
@@ -185,37 +184,37 @@ ChangeVersionInfo(ExeFile, hUpdate, verInfo)
 	for k,v in verInfo.OwnProps()
 	{
 		if IsLabel(lbl := "_VerInfo_" k)
-			gosub(lbl)
+			%lbl%(props,v,ffi)
 		continue
-		_VerInfo_Name:
-		SafeGetViChild(props, "ProductName").SetText(v)
-		SafeGetViChild(props, "InternalName").SetText(v)
-		return
-		_VerInfo_Description:
-		SafeGetViChild(props, "FileDescription").SetText(v)
-		return
-		_VerInfo_Version:
-		SafeGetViChild(props, "FileVersion").SetText(v)
-		SafeGetViChild(props, "ProductVersion").SetText(v)
-		ver := VersionTextToNumber(v)
-		hiPart := (ver >> 32)&0xFFFFFFFF, loPart := ver & 0xFFFFFFFF
-		NumPut(hiPart, ffi+8, "UInt"), NumPut(loPart, ffi+12, "UInt")
-		NumPut(hiPart, ffi+16, "UInt"), NumPut(loPart, ffi+20, "UInt")
-		return
-		_VerInfo_Copyright:
-		SafeGetViChild(props, "LegalCopyright").SetText(v)
-		return
-		_VerInfo_OrigFilename:
-		SafeGetViChild(props, "OriginalFilename").SetText(v)
-		return
-		_VerInfo_CompanyName:
-		SafeGetViChild(props, "CompanyName").SetText(v)
-		return
+		_VerInfo_Name(props,v,ffi){
+      SafeGetViChild(props, "ProductName").SetText(v)
+      SafeGetViChild(props, "InternalName").SetText(v)
+		}
+		_VerInfo_Description(props,v,ffi){
+      SafeGetViChild(props, "FileDescription").SetText(v)
+		}
+		_VerInfo_Version(props,v,ffi){
+      SafeGetViChild(props, "FileVersion").SetText(v)
+      SafeGetViChild(props, "ProductVersion").SetText(v)
+      ver := VersionTextToNumber(v)
+      hiPart := (ver >> 32)&0xFFFFFFFF, loPart := ver & 0xFFFFFFFF
+      NumPut("UInt", hiPart, ffi+8), NumPut("UInt", loPart, ffi+12)
+      NumPut("UInt", hiPart, ffi+16), NumPut("UInt", loPart, ffi+20)
+		}
+		_VerInfo_Copyright(props,v,ffi){
+      SafeGetViChild(props, "LegalCopyright").SetText(v)
+		}
+		_VerInfo_OrigFilename(props,v,ffi){
+      SafeGetViChild(props, "OriginalFilename").SetText(v)
+		}
+		_VerInfo_CompanyName(props,v,ffi){
+      SafeGetViChild(props, "CompanyName").SetText(v)
+		}
 	}
 	
-	VarSetCapacity(newVI, 16384) ; Should be enough
-	viSize := vi.Save(&newVI)
-	if !UpdateResource(hUpdate, 16, 1, 0x409, &newVI, viSize)
+	newVI:=BufferAlloc(16384) ; Should be enough
+	viSize := vi.Save(newVI.Ptr)
+	if !UpdateResource(hUpdate, 16, 1, 0x409, newVI, viSize)
 		Util_Error("Error changing the version information.")
 }
 
