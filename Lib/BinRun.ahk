@@ -19,14 +19,16 @@ BinRun(pData,cmdLine:="",cmdLineScript:="",Hide:=0,ExeToUse:=""){
     ,MEM_COMMIT:=4096,MEM_RESERVE:=8192,STARTF_USESHOWWINDOW:=1
     ,h2o:="B29C2D1CA2C24A57BC5E208EA09E162F(){`nPLACEHOLDERB29C2D1CA2C24A57BC5E208EA09E162Fh:='',dmp:=BufferAlloc(sz:=StrLen(hex)//2,0)`nLoop Parse,hex`nIf (`"`"!=h.=A_LoopField) && !Mod(A_Index,2)`nNumPut(`"UChar`",`"0x`" h,dmp,A_Index/2-1),h:=`"`"`nreturn ObjLoad(dmp.Ptr)`n}`n"
   local data:="",data2:="",dmp:="", force32bit:=0, script:="",_s:=""
-  If (Type(pData)!="Integer")
+  if (Type(pData)="Buffer")
+    data:=pData,pData:=data.Ptr
+  else If (Type(pData)!="Integer")
   {	
     ; Try first reading the file from Resource
     If res := FindResource(lib:=GetModuleHandle(),pData,10)
       data:=BufferAlloc(sz :=SizeofResource(lib,res))
       ,RtlMoveMemory(data.Ptr,LockResource(hres:=LoadResource(lib,res)),sz)
       ,FreeResource(hres)
-      ,UnZipRawMemory(data.Ptr,sz,data2)?(data:=data2):""
+      ,data2:=UnZipRawMemory(data.Ptr,sz)?(data:=data2):""
     else ; else try reading file from disc etc...
       Data:=FileRead(pData,"RAW")
     pData:=Data.Ptr
