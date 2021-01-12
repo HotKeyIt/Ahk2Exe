@@ -158,7 +158,7 @@ BundleAhkScript(ExeFile, AhkFile, UseMPRESS, IcoFile="", fileCP="", UseCompressi
           ,DllCall(""crypt32\CryptBinaryToStringA"",""PTR"", &zip,""UInt"", sz,""UInt"", 0x1|0x40000000,""UInt"", 0,""UIntP"", cryptedsz:=0)
           ,tosavesz:=cryptedsz
           ,DllCall(""crypt32\CryptBinaryToStringA"",""PTR"", &zip,""UInt"", sz,""UInt"", 0x1|0x40000000,""PTR"", &buf1,""UIntP"", cryptedsz)
-          ,NumPut(10,&buf1,cryptedsz)
+          ,NumPut(10,&buf1,cryptedsz,""UShort"")
           if (totalsz+tosavesz>bufsz)
             VarSetCapacity(buf,bufsz*=2)
           RtlMoveMemory((&buf) + totalsz,&buf1,tosavesz)
